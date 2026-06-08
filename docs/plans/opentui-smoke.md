@@ -156,10 +156,36 @@ now run via the composer (no env prompt needed).
   - **Teardown:** Ctrl+C quits cleanly EVEN with the textarea focused (renderer.keyInput sees Ctrl+C);
     my `bun` PID gone + its `tui_gateway` child reaped — no orphan (exact-PID checks).
 
-**Phase 2b — ordered parts + tool render + markdown (TODO):** replace the flat `Message.text` with
-an ordered `parts[]` (§7) and a `<Switch>` dispatch in `messageLine.tsx`; inline/block tool render
-(compact one-line / capped left-bar block, strip the `{output,exit_code}` envelope); native
-`<markdown>` for assistant text. Adds smoke step 4 (tool row renders inline) + step 3 markdown.
+**Phase 2b-i — ordered parts + inline tool render:** the flat `Message.text` is replaced (for
+assistant turns) by an ordered `parts[]` (§7) dispatched by `<Switch>` in `messageLine.tsx` —
+text/reasoning/tool interleave INLINE. Tools matched `start`↔`complete` by `tool_id`, updated IN
+PLACE; result rendered inline (≤1 line) or as a capped left-bar block, with the `{output,exit_code}`
+envelope stripped (`logic/toolOutput.ts`). Adds smoke step 4 (tool row renders inline).
+
+- *Run log (2026-06-08, PASS):*
+  - Headless gate `bun run check` → **green**: `tsc` + `eslint` clean; `bun test` **23/23** (5 files,
+    64 expects). New: store ordered-parts tests (interleave text→tool→text, tool update-in-place,
+    reasoning accumulate), a frame test asserting the tool renders inline between text + the envelope
+    is stripped (`not.toContain('exit_code')`), and pure `toolOutput` unit tests.
+  - **Live tmux:** prompt `Use your terminal tool to run … echo alpha; echo beta …`. The assistant
+    turn rendered the tool INLINE between text blocks (not dumped below):
+    ```
+     ❯ Use your terminal tool to run the shell command: echo alpha; echo beta. …
+     ⚕ (°ロ°) brainstorming... This seems straightforward.
+       ⚡  terminal
+           alpha
+           beta
+       (´･_･`) reflecting...
+       It printed **2 lines**: …
+    ```
+    Multi-line output → left-bar block; envelope stripped (no `{output,exit_code}` wrapper shown).
+    (Raw `**2 lines**`/``` fences are expected — native `<markdown>` is 2b-ii.)
+  - **Teardown:** Ctrl+C → my `bun` + its `tui_gateway` child both gone, no orphan.
+
+**Phase 2b-ii — native markdown (TODO):** render text parts via the native `<markdown>`
+(`MarkdownRenderable`) + a `SyntaxStyle.fromStyles` built from the theme (streaming +
+`internalBlockMode="top-level"`), so bold/headings/fences/tables render instead of raw `**`/```` ```.
+Completes smoke step 3 (markdown).
 
 ### Phase 3 — blocking prompts
 _(append: step 6 — all 4 prompts + confirm + cancel paths; verify no deadlock)_

@@ -554,8 +554,11 @@ two gates run every phase.
   the real `<textarea>` composer (clear-on-submit + re-entrancy guard → `prompt.submit`, now the
   primary input), and a `header.tsx` skeleton. Live drive + gate logged in `opentui-smoke.md` (P2a);
   parity-matrix rows ✅/⚠️ in `opentui-feature-map.md`.
-- **Next — Phase 2b — ordered parts + tool render + markdown:** replace the flat `Message.text` with
-  an ordered `parts[]` (§7) + a `<Switch>` dispatch in `messageLine.tsx`; inline/block compact tool
-  render (one-line / capped left-bar block, strip the `{output,exit_code}` envelope); native
-  `<markdown>` for assistant text. Frame-snapshot tests + smoke step 4 (inline tool row) + step 3
-  markdown.
+- **Phase 2b-i — ordered parts + inline tool render: ✅** (this commit). Assistant turns are an
+  ordered `parts[]` (text/reasoning/tool) dispatched by `<Switch>` in `messageLine.tsx` so tools
+  interleave inline (§7); `view/toolPart.tsx` does the inline/capped-block render; `logic/toolOutput.ts`
+  strips the `{output,exit_code}` envelope + collapses. Live drive shows a `⚡ terminal` row between
+  text blocks (smoke P2b); 23 tests green.
+- **Next — Phase 2b-ii — native markdown:** render text parts via the native `<markdown>` renderable
+  + a theme-derived `SyntaxStyle.fromStyles` (streaming, `internalBlockMode="top-level"`), replacing
+  the raw `**`/fenced text. Completes smoke step 3 (markdown).
