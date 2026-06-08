@@ -125,10 +125,15 @@ Composer↔overlay swap on `store.state.prompt`; global Ctrl+C-quit gated on `!b
 |---|---|---|---|---|
 | Live slash completions above the composer — `onContentChange`→`complete.slash`; Tab accepts top, Esc dismiss | `useCompletion.ts`, `appOverlays.tsx:203` | `view/composer.tsx`, store `completions`/set/clear, `logic/slash.ts` `mapCompletions`, `entry` `onType` | ✅ | `slash.test.ts` + `render.test.tsx` · **smoke P5a (live: /comp → dropdown → Tab)** |
 
-**5 of 6 first-class overlay/popup surfaces ✅ + tested + smoked: blocking prompts, pager, session
-switcher, model picker, skills hub, completions** (6 incl. prompts). Remaining: agents dashboard
-(5e — needs live `subagent.*`). Plus chrome (5b) + agent features (5d). The §1–§4 Ink inventory
-below is the per-phase source._
+### Phase 5e — agents dashboard (§2b; the hardest overlay)
+| Concern | Ink ref | v2 build | Status | Test · smoke |
+|---|---|---|---|---|
+| Subagent tree from `subagent.*` (spawn/start/thinking/tool/progress/complete) by id, depth-indented | `thinking.tsx:281` + `agentsOverlay` | `logic/store.ts` (subagents reducer), `view/overlays/agentsDashboard.tsx` | ✅ | `store.test.ts` + `render.test.tsx` · **smoke P5e (live delegation)** |
+| `/agents`,`/tasks` open the dashboard | `appLayout.tsx:409` | `logic/slash.ts`, store openDashboard/closeDashboard | ✅ | `slash.test.ts` · smoke P5e |
+
+**ALL 7 first-class interactive surfaces ✅ + tested + smoked: blocking prompts, pager, session
+switcher, model picker, skills hub, completions, agents dashboard.** Remaining: chrome (5b) + agent
+feature polish (5d) + launcher (8). The §1–§4 Ink inventory below is the per-phase source._
 
 ---
 

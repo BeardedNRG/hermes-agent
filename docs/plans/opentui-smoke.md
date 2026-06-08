@@ -370,8 +370,32 @@ The textarea owns key input (so live-refine-by-typing works), so **Tab** accepts
 **ALL 6 first-class overlays now ✅ + tested + in the smoke:** blocking prompts (P3), pager (P5a),
 session switcher (P5c), model picker (P5c), skills hub (P5c), completions (P5a).
 
-**Phase 5b / 5d / 5e (TODO):** header chrome (model/cwd/context%/cost from `session.info`+`Usage`);
-agent features (reasoning trail, todos, notifications, voice); subagents tree + agents dashboard.
+### Phase 5e — agents dashboard (the 7th first-class surface)
+
+`/agents` (alias `/tasks`) opens a full-height overlay (`view/overlays/agentsDashboard.tsx`,
+replaces transcript+composer) listing the subagents tracked from the `subagent.*` event stream
+(spawn_requested/start/thinking/tool/progress/complete → a by-id tree in the store, indented by
+depth, showing status·goal·model·lastTool). Scroll via scrollBy/scrollTo; Esc/q close.
+
+- *Run log (2026-06-08, PASS):*
+  - Headless gate `bun run check` → **green** (53 tests / 7 files): store subagent reducer
+    (start→add, tool→lastTool, complete→status; clearTranscript clears) + `/agents`,`/tasks`→
+    openDashboard + a dashboard frame test (seeded subagent tree renders, transcript replaced).
+  - **Live tmux (real delegation):** `/agents` → "⛓ Agents · 0 subagents · No subagents yet…", Esc
+    closed. Then a delegation prompt → the agent spawned a subagent → `/agents` showed:
+    ```
+     ⛓ Agents · 1 subagent
+     ● completed  Run the shell command exactly: echo subagent-here … (anthropic/claude-opus-4.8-fast)
+       ⚡terminal
+    ```
+    The `subagent.*` events flowed into the store and rendered (status·goal·model·tool).
+
+**ALL 7 first-class interactive surfaces now ✅ + tested + in the smoke:** blocking prompts (P3),
+pager (P5a), session switcher (P5c), model picker (P5c), skills hub (P5c), completions (P5a),
+agents dashboard (P5e).
+
+**Phase 5b / 5d (remaining):** header chrome (model/cwd/context%/cost from `session.info`+`Usage`);
+agent feature polish (reasoning trail, todos, notifications, voice). Then Phase 8 launcher cutover.
 
 ### Phase 8 — launcher
 _(append: launch via the real `HERMES_TUI_ENGINE=opentui hermes --tui`; dashboard PTY path)_

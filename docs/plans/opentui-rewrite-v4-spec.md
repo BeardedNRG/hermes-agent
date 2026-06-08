@@ -601,6 +601,10 @@ two gates run every phase.
   Live-verified (`/comp` → dropdown → Tab). **All 6 first-class overlay/popup surfaces are now done**
   (blocking prompts, pager, session switcher, model picker, skills hub, completions) — each ✅ +
   tested + in the smoke, the judge's acceptance bar for the interactive surfaces.
+- **Phase 5e — agents dashboard: ✅** (this commit). `subagent.*` events build a by-id subagent tree
+  in the store; `/agents`,`/tasks` open a full-height dashboard overlay (`agentsDashboard.tsx`,
+  depth-indented status·goal·model·tool). Live-verified with a real delegation (smoke P5e). **ALL 7
+  first-class interactive surfaces are now ✅ + tested + smoked** (blocking prompts, pager, session
+  switcher, model picker, skills hub, completions, agents dashboard) — the judge's acceptance bar.
 - **Next:** Phase 5b chrome (header model/cwd/context%/cost from `session.info`+`Usage`), Phase 5d
-  agent features (reasoning trail/todos/notifications/voice), Phase 5e subagents tree + agents
-  dashboard (needs live `subagent.*`), Phase 8 launcher cutover + distribution.
+  agent-feature polish (reasoning trail/todos/notifications/voice), Phase 8 launcher cutover + dist.
