@@ -383,6 +383,32 @@ run it under Bun; capture a frame + a perf number. No Python launcher changes ye
   - **CI:** `demo.prompts.tsx` added as a HARD gate in `scripts/check.sh` (now 5 steps) +
     `package.json` `demo:prompts`. `bun run check` fully green (incl. real gateway PASS).
 
+- **Phase 3 ✓ (2026-06-08) — launcher integration (`HERMES_TUI_ENGINE`).** `hermes --tui` now
+  launches EITHER engine from the real CLI. **Verified end-to-end via tmux:**
+  `HERMES_TUI_ENGINE=opentui … -m hermes_cli.main --tui` painted the native OpenTUI engine in a real
+  PTY (header `engine=opentui · bun · ready`), and a typed prompt round-tripped through the real
+  Python gateway → `> say hi in exactly 3 words` → `✦ Hi there friend`. No-flag default still
+  resolves to `ink` (regression-checked).
+  - **All edits in `hermes_cli/main.py` (edited directly per `hermes-agent-dev`, never via subagent
+    — it's the large load-bearing launcher).** Added:
+    - `_config_tui_engine_early()` — minimal YAML read of `display.tui_engine` (mirrors
+      `_config_default_interface_early`).
+    - `_resolve_tui_engine()` — precedence env `HERMES_TUI_ENGINE` > config > `"ink"`; **refuses
+      `opentui` on Windows/Termux** (Bun unavailable → falls back to ink with a stderr notice) so a
+      stale flag can't strand the user (review §13 S5).
+    - `_bun_bin()` — `HERMES_BUN` override > `bun` on PATH > `~/.bun/bin`, `/usr/local/bin`,
+      `/opt/homebrew/bin`; clear exit message if missing.
+    - `_make_opentui_argv(tui_dev)` — returns `[bun, (--watch,) src/entry.real.tsx]` + the
+      `ui-tui-opentui/` cwd. NO build step (Bun runs TS directly).
+  - **Cutover points (the v2 review proved `_make_tui_argv` is not the only one):**
+    - `_make_tui_argv` now branches to `_make_opentui_argv` at the TOP, **before**
+      `_ensure_tui_node()` (review §11 P6 — a Bun-only host must not be forced through Node bootstrap).
+    - `_launch_tui`'s `NODE_OPTIONS`/`--max-old-space-size` block is **gated on `engine=="ink"`**
+      (review §11 P1 — Bun is JSC, that V8 flag would error/ignore).
+  - **Scope:** dev/checkout launch only. NOT done (Phase 5): dashboard PTY bridge engine-awareness
+    (`web_server.py` `_apply_tui_engine_env`), `_ensure_tui_bun` auto-install + `bun-bootstrap.sh`,
+    auto-fallback-to-ink on OpenTUI launch failure, wheel/Docker native-lib packaging.
+
 
 ### Subagent workflow note (for future phases)
 OpenTUI implementation subagents MUST get the `skills` toolset AND be told to
