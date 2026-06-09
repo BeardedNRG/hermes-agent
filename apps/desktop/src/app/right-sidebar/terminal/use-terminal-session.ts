@@ -65,10 +65,29 @@ function stripEscapeSequences(data: string) {
   return text
 }
 
-function isStartupSpacer(data: string) {
-  const text = stripEscapeSequences(data).replace(/[\s\r\n]/g, '')
+// Keep only the ANSI escape sequences from a chunk, dropping printable text. Lets
+// us apply control codes (e.g. a clear-screen) while discarding boot spacers and
+// zsh's reverse-video "%" partial-line marker.
+function keepEscapeSequences(data: string) {
+  let index = 0
+  let out = ''
 
-  return text === '' || text === '%'
+  while (index < data.length) {
+    if (data.charCodeAt(index) === 0x1b) {
+      const sequence = readEscapeSequence(data, index)
+
+      if (sequence) {
+        out += sequence
+        index += sequence.length
+
+        continue
+      }
+    }
+
+    index += 1
+  }
+
+  return out
 }
 
 function stripInitialPromptGap(data: string) {
@@ -280,18 +299,6 @@ export function useTerminalSession({ cwd, onAddSelectionToChat }: UseTerminalSes
     term.loadAddon(new Unicode11Addon())
     term.loadAddon(new WebLinksAddon())
     term.unicode.activeVersion = '11'
-    term.open(host)
-    term.focus()
-
-    // WebGL renderer matches the dashboard ChatPage path; xterm's default DOM
-    // renderer paints SGR via CSS classes that visibly mute against our skins.
-    try {
-      const webgl = new WebglAddon()
-      webgl.onContextLoss(() => webgl.dispose())
-      term.loadAddon(webgl)
-    } catch (err) {
-      console.warn('[hermes-terminal] WebGL unavailable; falling back to DOM', err)
-    }
 
     const onDragOver = (e: DragEvent) => {
       if (!e.dataTransfer || !transferHasDropCandidates(e.dataTransfer)) {
@@ -332,6 +339,75 @@ export function useTerminalSession({ cwd, onAddSelectionToChat }: UseTerminalSes
       host.removeEventListener('drop', onDrop)
     })
 
+    // A fresh prompt should sit at the top. Every resize SIGWINCHes the shell,
+    // which reprints its prompt and can leave stale blank rows above it. While
+    // the session is pristine (nothing run yet) we ask the shell to clear +
+    // redraw via Ctrl-L (\f) after the resize settles. Ctrl-L preserves
+    // multi-line prompts (term.clear() would drop all but the cursor row) and we
+    // stop the moment real output exists, so command scrollback is never wiped.
+    let promptPristine = true
+    let gapCleanupTimer = 0
+
+    // While armed, strip leading blank rows so the prompt lands at the very top
+    // (no starship `add_newline` gap). Re-armed before each Ctrl-L redraw so the
+    // resize cleanup doesn't reintroduce the blank line.
+    let stripLeading = true
+
+    const armedWrite = (data: string) => {
+      if (!stripLeading) {
+        term.write(data)
+
+        return
+      }
+
+      const next = stripInitialPromptGap(data)
+      const visible = stripEscapeSequences(next).replace(/[\s%]/g, '')
+
+      if (!visible) {
+        // Spacer / lone clear-screen / zsh `%` marker: apply control codes but
+        // drop the blank text and stay armed so the prompt still lands at top.
+        const controls = keepEscapeSequences(next)
+
+        if (controls) {
+          term.write(controls)
+        }
+
+        return
+      }
+
+      stripLeading = false
+      term.write(next)
+    }
+
+    const scheduleGapCleanup = () => {
+      if (!promptPristine) {
+        return
+      }
+
+      if (gapCleanupTimer) {
+        window.clearTimeout(gapCleanupTimer)
+      }
+
+      gapCleanupTimer = window.setTimeout(() => {
+        gapCleanupTimer = 0
+        const id = sessionIdRef.current
+
+        if (disposed || !id || !promptPristine) {
+          return
+        }
+
+        stripLeading = true
+        void terminalApi.write(id, '\f')
+        term.clearSelection()
+      }, 120)
+    }
+
+    cleanup.push(() => {
+      if (gapCleanupTimer) {
+        window.clearTimeout(gapCleanupTimer)
+      }
+    })
+
     const fitAndResize = () => {
       if (disposed || !host.isConnected || host.clientWidth <= 0 || host.clientHeight <= 0) {
         return
@@ -348,6 +424,7 @@ export function useTerminalSession({ cwd, onAddSelectionToChat }: UseTerminalSes
       if (id && (lastSentSize?.cols !== term.cols || lastSentSize?.rows !== term.rows)) {
         lastSentSize = { cols: term.cols, rows: term.rows }
         void terminalApi.resize(id, { cols: term.cols, rows: term.rows })
+        scheduleGapCleanup()
       }
     }
 
@@ -384,6 +461,12 @@ export function useTerminalSession({ cwd, onAddSelectionToChat }: UseTerminalSes
       const id = sessionIdRef.current
 
       if (id) {
+        // Once the user submits a line, real output may follow — stop the
+        // pristine-prompt gap cleanup so we never clear command scrollback.
+        if (promptPristine && data.includes('\r')) {
+          promptPristine = false
+        }
+
         void terminalApi.write(id, data)
       }
     })
@@ -415,68 +498,79 @@ export function useTerminalSession({ cwd, onAddSelectionToChat }: UseTerminalSes
       return true
     })
 
-    fitAndResize()
+    const startSession = () =>
+      void terminalApi
+        .start({ cols: term.cols, cwd, rows: term.rows })
+        .then(session => {
+          if (disposed) {
+            void terminalApi.dispose(session.id)
 
-    void terminalApi
-      .start({ cols: term.cols, cwd, rows: term.rows })
-      .then(session => {
-        if (disposed) {
-          void terminalApi.dispose(session.id)
+            return
+          }
 
-          return
-        }
+          sessionIdRef.current = session.id
+          lastSentSize = { cols: term.cols, rows: term.rows }
+          shellNameRef.current = session.shell || 'shell'
+          setShellName(session.shell || 'shell')
 
-        sessionIdRef.current = session.id
-        lastSentSize = { cols: term.cols, rows: term.rows }
-        shellNameRef.current = session.shell || 'shell'
-        setShellName(session.shell || 'shell')
+          const initial = term.hasSelection() ? term.getSelection() : ''
+          selectionRef.current = initial
+          selectionLabelRef.current = initial ? terminalSelectionLabel(term, shellNameRef.current, initial) : ''
 
-        if (term.hasSelection()) {
-          const currentSelection = term.getSelection()
-          selectionRef.current = currentSelection
-          selectionLabelRef.current = terminalSelectionLabel(term, shellNameRef.current, currentSelection)
-        } else {
-          selectionRef.current = ''
-          selectionLabelRef.current = ''
-        }
+          setStatus('open')
 
-        setStatus('open')
-        let wrotePromptContent = false
+          cleanup.push(
+            terminalApi.onData(session.id, armedWrite),
+            terminalApi.onExit(session.id, ({ code, signal }) => {
+              setStatus('closed')
+              term.write(`\r\n[terminal exited${signal ? `: ${signal}` : code !== null ? `: ${code}` : ''}]\r\n`)
+            })
+          )
 
-        cleanup.push(
-          terminalApi.onData(session.id, data => {
-            if (wrotePromptContent) {
-              term.write(data)
-
-              return
-            }
-
-            if (isStartupSpacer(data)) {
-              return
-            }
-
-            const next = stripInitialPromptGap(data)
-
-            if (next) {
-              wrotePromptContent = true
-              term.write(next)
-            }
-          }),
-          terminalApi.onExit(session.id, sessionExit => {
-            const { code, signal } = sessionExit
-            setStatus('closed')
-            term.write(`\r\n[terminal exited${signal ? `: ${signal}` : code !== null ? `: ${code}` : ''}]\r\n`)
+          window.requestAnimationFrame(() => {
+            fitAndResize()
+            term.clearSelection() // drop any selection painted over transient boot rows
+            term.focus()
           })
-        )
-        window.requestAnimationFrame(() => {
-          fitAndResize()
-          term.focus()
         })
-      })
-      .catch(error => {
-        setStatus('closed')
-        term.write(`Terminal failed to start: ${error instanceof Error ? error.message : String(error)}\r\n`)
-      })
+        .catch(error => {
+          setStatus('closed')
+          term.write(`Terminal failed to start: ${error instanceof Error ? error.message : String(error)}\r\n`)
+        })
+
+    // Open + fit + start only once webfonts settle. Fitting with fallback metrics
+    // picks the wrong row count, the shell boots at that size, then the real font
+    // loads -> refit -> SIGWINCH -> the shell reprints its prompt lower, leaving
+    // stale blank rows (and a stray selection) above it.
+    const mount = () => {
+      if (disposed || !host.isConnected) {
+        return
+      }
+
+      term.open(host)
+      term.focus()
+
+      // WebGL renderer matches the dashboard ChatPage path; xterm's default DOM
+      // renderer paints SGR via CSS classes that visibly mute against our skins.
+      try {
+        const webgl = new WebglAddon()
+        webgl.onContextLoss(() => webgl.dispose())
+        term.loadAddon(webgl)
+      } catch (err) {
+        console.warn('[hermes-terminal] WebGL unavailable; falling back to DOM', err)
+      }
+
+      fitAndResize()
+      startSession()
+    }
+
+    const fonts = typeof document !== 'undefined' ? document.fonts : undefined
+
+    if (fonts?.ready) {
+      void fonts.ready.then(mount, mount)
+    } else {
+      mount()
+    }
 
     return () => {
       disposed = true

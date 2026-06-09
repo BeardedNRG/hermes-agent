@@ -4,6 +4,7 @@ import { Dialog as DialogPrimitive } from 'radix-ui'
 import { useCallback, useEffect, useMemo, useState } from 'react'
 import { useNavigate } from 'react-router-dom'
 
+import { $terminalTakeover, setTerminalTakeover } from '@/app/right-sidebar/store'
 import { Command, CommandEmpty, CommandGroup, CommandInput, CommandItem, CommandList } from '@/components/ui/command'
 import { getHermesConfigRecord, listSessions } from '@/hermes'
 import { useI18n } from '@/i18n'
@@ -30,6 +31,7 @@ import {
   Settings,
   Settings2,
   Sun,
+  Terminal,
   Users,
   Wrench,
   Zap
@@ -149,6 +151,7 @@ const THEME_MODES: ReadonlyArray<{ icon: IconComponent; mode: ThemeMode }> = [
 export function CommandPalette() {
   const { t } = useI18n()
   const open = useStore($commandPaletteOpen)
+  const terminalOpen = useStore($terminalTakeover)
   const navigate = useNavigate()
   const { availableThemes, mode, resolvedMode, setMode, setTheme, themeName } = useTheme()
   const [search, setSearch] = useState('')
@@ -194,10 +197,12 @@ export function CommandPalette() {
   }, [open])
 
   const go = useCallback((path: string) => () => navigate(path), [navigate])
+
   const settingsSectionLabel = useCallback(
     (section: (typeof SECTIONS)[number]) => t.settings.sections[section.id] ?? section.label,
     [t.settings.sections]
   )
+
   const configFieldLabel = useCallback(
     (key: string) =>
       fieldCopyForSchemaKey(t.settings.fieldLabels, key) ??
@@ -214,7 +219,21 @@ export function CommandPalette() {
       {
         heading: cc.goTo,
         items: [
-          { icon: Plus, id: 'nav-new', keywords: ['chat', 'create'], label: cc.nav.newChat.title, run: go(NEW_CHAT_ROUTE) },
+          {
+            icon: Plus,
+            id: 'nav-new',
+            keywords: ['chat', 'create'],
+            label: cc.nav.newChat.title,
+            run: go(NEW_CHAT_ROUTE)
+          },
+          {
+            active: terminalOpen,
+            icon: Terminal,
+            id: 'nav-terminal',
+            keywords: ['terminal', 'shell', 'console'],
+            label: t.keybinds.actions['view.showTerminal'],
+            run: () => setTerminalTakeover(true)
+          },
           { icon: Settings, id: 'nav-settings', label: cc.nav.settings.title, run: go(SETTINGS_ROUTE) },
           {
             icon: Wrench,
@@ -225,7 +244,13 @@ export function CommandPalette() {
           },
           { icon: MessageCircle, id: 'nav-messaging', label: cc.nav.messaging.title, run: go(MESSAGING_ROUTE) },
           { icon: Package, id: 'nav-artifacts', label: cc.nav.artifacts.title, run: go(ARTIFACTS_ROUTE) },
-          { icon: Clock, id: 'nav-cron', keywords: ['schedule', 'jobs'], label: t.shell.statusbar.cron, run: go(CRON_ROUTE) },
+          {
+            icon: Clock,
+            id: 'nav-cron',
+            keywords: ['schedule', 'jobs'],
+            label: t.shell.statusbar.cron,
+            run: go(CRON_ROUTE)
+          },
           { icon: Users, id: 'nav-profiles', label: t.profiles.title, run: go(PROFILES_ROUTE) },
           { icon: Cpu, id: 'nav-agents', label: t.agents.title, run: go(AGENTS_ROUTE) }
         ]
@@ -298,7 +323,7 @@ export function CommandPalette() {
         ]
       }
     ]
-  }, [go, settingsSectionLabel, t])
+  }, [go, settingsSectionLabel, t, terminalOpen])
 
   // The long, granular lists (settings fields, API keys, MCP servers, archived
   // chats) only surface once the user types — otherwise they'd bury the

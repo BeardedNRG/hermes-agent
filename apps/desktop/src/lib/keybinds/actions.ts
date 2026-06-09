@@ -1,3 +1,5 @@
+import { IS_MAC } from './combo'
+
 // The single source of truth for rebindable desktop hotkeys.
 //
 // Each entry is pure metadata: an id, a category, and the default combo(s).
@@ -13,13 +15,7 @@ export const KEYBIND_PANEL_ACTION = 'keybinds.openPanel'
 
 // `composer` is read-only; the rest are rebindable. `view` is the catch-all for
 // layout, appearance, and the panel-opener.
-export const KEYBIND_CATEGORIES: readonly KeybindCategory[] = [
-  'composer',
-  'profiles',
-  'session',
-  'navigation',
-  'view'
-]
+export const KEYBIND_CATEGORIES: readonly KeybindCategory[] = ['composer', 'profiles', 'session', 'navigation', 'view']
 
 export interface KeybindActionMeta {
   id: string
@@ -42,6 +38,10 @@ const PROFILE_SWITCH_ACTIONS: KeybindActionMeta[] = Array.from({ length: PROFILE
   category: 'profiles' as const,
   defaults: [comboForSlot(i + 1)]
 }))
+
+// macOS: ⌃` (Control+backtick), the VS Code convention. ⌘` is reserved for
+// window cycling, so we use plain Control. Elsewhere: Ctrl+` via `mod`.
+const TERMINAL_TOGGLE_DEFAULTS = IS_MAC ? ['ctrl+`', 'ctrl+shift+`'] : ['mod+`', 'mod+shift+`']
 
 export const KEYBIND_ACTIONS: readonly KeybindActionMeta[] = [
   // ── Composer ─────────────────────────────────────────────────────────────
@@ -78,7 +78,7 @@ export const KEYBIND_ACTIONS: readonly KeybindActionMeta[] = [
   { id: 'view.toggleSidebar', category: 'view', defaults: ['mod+b'] },
   { id: 'view.toggleRightSidebar', category: 'view', defaults: ['mod+j'] },
   { id: 'view.showFiles', category: 'view', defaults: [] },
-  { id: 'view.showTerminal', category: 'view', defaults: [] },
+  { id: 'view.showTerminal', category: 'view', defaults: TERMINAL_TOGGLE_DEFAULTS },
   // ⌘\ — the backslash reads like a mirror line flipping the layout.
   { id: 'view.flipPanes', category: 'view', defaults: ['mod+\\'] },
   { id: 'appearance.toggleMode', category: 'view', defaults: ['shift+x'] },

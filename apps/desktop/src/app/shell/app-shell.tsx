@@ -28,6 +28,11 @@ interface AppShellProps {
   children: ReactNode
   leftStatusbarItems?: readonly StatusbarItem[]
   leftTitlebarTools?: readonly TitlebarTool[]
+  // Fixed-position overlays that must share <main>'s stacking context so pane
+  // resize handles (z-20) paint above them. The persistent terminal lives here:
+  // hoisting it to the root `overlays` layer (sibling of <main>, z above z-3)
+  // would cover every pane's drag handle.
+  mainOverlays?: ReactNode
   onOpenSettings: () => void
   overlays?: ReactNode
   statusbarItems?: readonly StatusbarItem[]
@@ -53,6 +58,7 @@ export function AppShell({
   children,
   leftStatusbarItems,
   leftTitlebarTools,
+  mainOverlays,
   onOpenSettings,
   overlays,
   statusbarItems,
@@ -156,6 +162,11 @@ export function AppShell({
 
           {children}
         </PaneShell>
+
+        {/* Fixed overlays scoped to main's stacking context (terminal). Rendered
+            after PaneShell so it paints over pane content, but its z stays under
+            the panes' z-20 resize handles, keeping every pane resizable. */}
+        {mainOverlays}
 
         <StatusbarControls items={statusbarItems} leftItems={leftStatusbarItems} />
       </main>

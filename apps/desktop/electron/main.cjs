@@ -62,9 +62,11 @@ const {
 } = require('./hardening.cjs')
 
 let nodePty = null
+let nodePtyDir = null
 
 try {
   nodePty = require('node-pty')
+  nodePtyDir = path.dirname(require.resolve('node-pty/package.json'))
 } catch {
   // Packaged builds set `files:` in package.json, which excludes node_modules
   // from the asar.  Workspace dedup also hoists this native dep to the repo
@@ -77,10 +79,12 @@ try {
     const path = require('node:path')
     const resourcesPath = process.resourcesPath
     if (resourcesPath) {
-      nodePty = require(path.join(resourcesPath, 'native-deps', 'node-pty'))
+      nodePtyDir = path.join(resourcesPath, 'native-deps', 'node-pty')
+      nodePty = require(nodePtyDir)
     }
   } catch {
     nodePty = null
+    nodePtyDir = null
   }
 }
 
@@ -3270,14 +3274,18 @@ function setAndPersistZoomLevel(window, zoomLevel) {
   const next = clampZoomLevel(zoomLevel)
   window.webContents.setZoomLevel(next)
   window.webContents
-    .executeJavaScript(`try { localStorage.setItem(${JSON.stringify(ZOOM_STORAGE_KEY)}, ${JSON.stringify(String(next))}) } catch {}`)
+    .executeJavaScript(
+      `try { localStorage.setItem(${JSON.stringify(ZOOM_STORAGE_KEY)}, ${JSON.stringify(String(next))}) } catch {}`
+    )
     .catch(error => rememberLog(`[zoom] persist failed: ${error?.message || error}`))
 }
 
 function restorePersistedZoomLevel(window) {
   if (!window || window.isDestroyed()) return
   window.webContents
-    .executeJavaScript(`(() => { try { return localStorage.getItem(${JSON.stringify(ZOOM_STORAGE_KEY)}) } catch { return null } })()`)
+    .executeJavaScript(
+      `(() => { try { return localStorage.getItem(${JSON.stringify(ZOOM_STORAGE_KEY)}) } catch { return null } })()`
+    )
     .then(stored => {
       if (stored == null || !window || window.isDestroyed()) return
       const level = clampZoomLevel(Number(stored))
@@ -4136,9 +4144,7 @@ async function requestJsonForProfile(profile, path, method, body) {
   const conn = await ensureBackend(profile)
   const url = `${conn.baseUrl}${path}`
   const opts = { method, body, timeoutMs: DEFAULT_FETCH_TIMEOUT_MS }
-  return conn.authMode === 'oauth'
-    ? fetchJsonViaOauthSession(url, opts)
-    : fetchJson(url, conn.token, opts)
+  return conn.authMode === 'oauth' ? fetchJsonViaOauthSession(url, opts) : fetchJson(url, conn.token, opts)
 }
 
 async function probeRemoteAuthMode(rawUrl) {
@@ -4212,7 +4218,8 @@ async function testDesktopConnectionConfig(input = {}) {
   // The block under test: a per-profile entry or the global remote. Coerce has
   // already normalized the URL and resolved token inheritance for the scope.
   const block = key ? config.profiles?.[key] || null : config.remote
-  const wantRemote = block?.mode === 'remote' || (!key && config.mode === 'remote') || (input.mode === 'remote' && block)
+  const wantRemote =
+    block?.mode === 'remote' || (!key && config.mode === 'remote') || (input.mode === 'remote' && block)
   // ``/api/status`` is public on every gateway (no creds needed), so a
   // reachability test works for local, token, and oauth modes alike — we only
   // need a base URL. For a remote config we normalize the URL from the input;
@@ -4466,7 +4473,9 @@ async function spawnPoolBackend(profile, entry) {
     rememberLog(`Hermes backend for profile "${profile}" exited (${signal || code})`)
     backendPool.delete(profile)
     if (!ready) {
-      rejectStart?.(new Error(`Hermes backend for profile "${profile}" exited before it became ready (${signal || code}).`))
+      rejectStart?.(
+        new Error(`Hermes backend for profile "${profile}" exited before it became ready (${signal || code}).`)
+      )
     }
   })
 
@@ -5097,17 +5106,19 @@ async function mergeRemoteProfileSessions(searchParams, remoteProfiles) {
   let total = (Number(base.total) || 0) - remoteProfiles.reduce((n, p) => n + (profileTotals[p] || 0), 0)
 
   // Swap each remote profile's stale local rows/total for the remote's real ones.
-  await Promise.all(remoteProfiles.map(async name => {
-    const list = await remoteSessionList(name, remoteParams).catch(() => null)
-    if (!list) {
-      delete profileTotals[name] // dead remote → drop its stale local total too
-      return
-    }
-    const rows = rowsOf(list)
-    merged.push(...rows)
-    profileTotals[name] = Number(list.total) || rows.length
-    total += profileTotals[name]
-  }))
+  await Promise.all(
+    remoteProfiles.map(async name => {
+      const list = await remoteSessionList(name, remoteParams).catch(() => null)
+      if (!list) {
+        delete profileTotals[name] // dead remote → drop its stale local total too
+        return
+      }
+      const rows = rowsOf(list)
+      merged.push(...rows)
+      profileTotals[name] = Number(list.total) || rows.length
+      total += profileTotals[name]
+    })
+  )
 
   const recency = s => s?.[order] ?? s?.started_at ?? 0
   merged.sort((a, b) => recency(b) - recency(a))
@@ -5363,20 +5374,80 @@ function findGitRoot(start) {
   return null
 }
 
-function terminalShellCommand() {
-  if (IS_WINDOWS) {
-    return { args: [], command: process.env.COMSPEC || 'cmd.exe' }
+function isExecutableFile(filePath) {
+  if (!filePath || !path.isAbsolute(filePath)) {
+    return false
   }
 
-  const configuredShell = process.env.SHELL || ''
-  const shellPath =
-    (path.isAbsolute(configuredShell) && fs.existsSync(configuredShell) && configuredShell) ||
-    ['/bin/zsh', '/bin/bash', '/bin/sh'].find(candidate => fs.existsSync(candidate)) ||
-    '/bin/sh'
+  try {
+    fs.accessSync(filePath, fs.constants.X_OK)
+    return true
+  } catch {
+    return false
+  }
+}
+
+function posixShellSpec(shellPath) {
   const shellName = path.basename(shellPath)
   const interactiveArgs = shellName.includes('zsh') || shellName.includes('bash') ? ['-il'] : ['-i']
 
   return { args: interactiveArgs, command: shellPath, name: shellName }
+}
+
+let spawnHelperChecked = false
+
+// node-pty execs a `spawn-helper` binary on macOS/Linux to launch the shell in a
+// fresh session. The prebuilt that ships in node-pty's `prebuilds/` (and the
+// staged copy under resources/native-deps) loses its execute bit through npm
+// pack / electron-builder file collection, so every nodePty.spawn() dies with
+// "posix_spawnp failed". Restore +x once, lazily, before the first spawn.
+function ensureSpawnHelperExecutable() {
+  if (spawnHelperChecked || IS_WINDOWS || !nodePtyDir) {
+    return
+  }
+
+  spawnHelperChecked = true
+
+  const arch = process.arch
+  const candidates = [
+    path.join(nodePtyDir, 'build', 'Release', 'spawn-helper'),
+    path.join(nodePtyDir, 'prebuilds', `${process.platform}-${arch}`, 'spawn-helper')
+  ]
+
+  for (const helper of candidates) {
+    try {
+      const mode = fs.statSync(helper).mode
+
+      if ((mode & 0o111) !== 0o111) {
+        fs.chmodSync(helper, mode | 0o755)
+      }
+    } catch {
+      // Not present in this layout (e.g. compiled build vs prebuild); skip.
+    }
+  }
+}
+
+function terminalShellCommand() {
+  if (IS_WINDOWS) {
+    const command = process.env.COMSPEC || 'cmd.exe'
+    const name = path.basename(command).toLowerCase()
+
+    return { args: [], command, name }
+  }
+
+  const configuredShell = (process.env.SHELL || '').trim()
+
+  if (isExecutableFile(configuredShell)) {
+    return posixShellSpec(configuredShell)
+  }
+
+  const shellPath = ['/bin/zsh', '/bin/bash', '/bin/sh'].find(candidate => isExecutableFile(candidate))
+
+  if (shellPath) {
+    return posixShellSpec(shellPath)
+  }
+
+  return posixShellSpec('/bin/sh')
 }
 
 function safeTerminalCwd(cwd) {
@@ -5486,6 +5557,8 @@ ipcMain.handle('hermes:terminal:start', async (event, payload = {}) => {
   if (!nodePty) {
     throw new Error('PTY support is unavailable. Reinstall desktop dependencies and restart Hermes.')
   }
+
+  ensureSpawnHelperExecutable()
 
   const id = crypto.randomUUID()
   const { args, command, name } = terminalShellCommand()
@@ -5808,7 +5881,6 @@ ipcMain.handle('hermes:uninstall:run', async (_event, payload) => {
   const mode = payload && typeof payload === 'object' ? payload.mode : payload
   return runDesktopUninstall(String(mode || ''))
 })
-
 
 app.whenReady().then(() => {
   if (IS_MAC) {

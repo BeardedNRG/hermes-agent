@@ -1,7 +1,7 @@
 import '@xterm/xterm/css/xterm.css'
 
 import { useStore } from '@nanostores/react'
-import type { CSSProperties } from 'react'
+import { type CSSProperties, useMemo } from 'react'
 
 import { Button } from '@/components/ui/button'
 import { Codicon } from '@/components/ui/codicon'
@@ -24,7 +24,7 @@ interface TerminalTabProps {
 export function TerminalTab({ cwd, onAddSelectionToChat }: TerminalTabProps) {
   const { t } = useI18n()
   const { resolvedMode } = useTheme()
-  const theme = terminalTheme(resolvedMode)
+  const theme = useMemo(() => terminalTheme(resolvedMode), [resolvedMode])
 
   const { addSelectionToChat, hostRef, selection, selectionStyle, shellName, status } = useTerminalSession({
     cwd,

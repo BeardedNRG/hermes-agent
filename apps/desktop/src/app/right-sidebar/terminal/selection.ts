@@ -49,7 +49,36 @@ const LIGHT_THEME: ITheme = {
   brightWhite: '#111827'
 }
 
-export const terminalTheme = (mode: 'light' | 'dark'): ITheme => (mode === 'dark' ? DARK_THEME : LIGHT_THEME)
+// Resolve a CSS expression (e.g. a var() chain or color-mix) to a concrete
+// rgb()/rgba() the xterm WebGL renderer can parse. Returns null when it resolves
+// to nothing / fully transparent so callers fall back to the static theme bg.
+function resolveCssColor(expression: string): string | null {
+  if (typeof document === 'undefined' || !document.body) {
+    return null
+  }
+
+  const probe = document.createElement('span')
+  probe.style.cssText = `position:absolute;visibility:hidden;pointer-events:none;background-color:${expression}`
+  document.body.appendChild(probe)
+  const resolved = getComputedStyle(probe).backgroundColor
+  probe.remove()
+
+  return resolved && resolved !== 'rgba(0, 0, 0, 0)' ? resolved : null
+}
+
+// Inherit the app's editor surface so the terminal blends with the active theme
+// (and skin) instead of painting its own slab. Falls back to the static palette
+// background when the variable can't be resolved (SSR / pre-CSS).
+export const terminalTheme = (mode: 'light' | 'dark'): ITheme => {
+  const base = mode === 'dark' ? DARK_THEME : LIGHT_THEME
+  const surface = resolveCssColor('var(--ui-editor-surface-background)')
+
+  if (!surface) {
+    return base
+  }
+
+  return { ...base, background: surface, cursorAccent: surface }
+}
 
 export const isMacPlatform = () => navigator.platform.toLowerCase().includes('mac')
 

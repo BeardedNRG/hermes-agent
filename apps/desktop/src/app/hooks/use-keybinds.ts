@@ -1,7 +1,7 @@
 import { useEffect, useRef } from 'react'
 import { useNavigate } from 'react-router-dom'
 
-import { setTerminalTakeover } from '@/app/right-sidebar/store'
+import { $terminalTakeover, setTerminalTakeover } from '@/app/right-sidebar/store'
 import { PANE_TOGGLE_REVEAL_EVENT } from '@/components/pane-shell'
 import { matchesQuery } from '@/hooks/use-media-query'
 import { PROFILE_SLOT_COUNT } from '@/lib/keybinds/actions'
@@ -129,7 +129,7 @@ export function useKeybinds(deps: KeybindRuntimeDeps): void {
       }
     },
     'view.showFiles': showFiles,
-    'view.showTerminal': () => setTerminalTakeover(true),
+    'view.showTerminal': () => setTerminalTakeover(!$terminalTakeover.get()),
     'view.flipPanes': togglePanesFlipped,
 
     'appearance.toggleMode': () => setMode(resolvedMode === 'dark' ? 'light' : 'dark'),
@@ -143,6 +143,17 @@ export function useKeybinds(deps: KeybindRuntimeDeps): void {
   }
 
   useEffect(() => {
+    // Fires the terminal toggle for Ctrl+` even when the user's persisted binding
+    // predates the default change (old default was ⌘⌃`). ⌃` on macOS, Ctrl+`
+    // elsewhere — Shift (the ~ variant) is allowed, Alt is not.
+    const isTerminalFallbackCombo = (event: KeyboardEvent) => {
+      if (event.code !== 'Backquote' || event.altKey) {
+        return false
+      }
+
+      return event.ctrlKey
+    }
+
     const onKeyDown = (event: KeyboardEvent) => {
       // Capture mode: the next real key becomes the binding. Swallow everything
       // so e.g. ⌘K rebinds instead of opening the palette.
@@ -179,6 +190,11 @@ export function useKeybinds(deps: KeybindRuntimeDeps): void {
       const actionId = $comboIndex.get().get(combo)
 
       if (!actionId) {
+        if (isTerminalFallbackCombo(event)) {
+          event.preventDefault()
+          setTerminalTakeover(!$terminalTakeover.get())
+        }
+
         return
       }
 

@@ -5,8 +5,7 @@
 // both. We derive the base key from `event.code` (not `event.key`) so Shift never
 // mutates it ("shift+/" stays "shift+/" instead of becoming "shift+?").
 
-export const IS_MAC =
-  typeof navigator !== 'undefined' && /mac/i.test(navigator.platform || navigator.userAgent || '')
+export const IS_MAC = typeof navigator !== 'undefined' && /mac/i.test(navigator.platform || navigator.userAgent || '')
 
 // event.code → canonical base token. Letters/digits map to their lowercase
 // character; everything else uses an explicit name so combos read cleanly.
@@ -81,7 +80,15 @@ export function comboFromEvent(event: KeyboardEvent): string | null {
 
   const parts: string[] = []
 
-  if (event.metaKey || event.ctrlKey) {
+  if (IS_MAC) {
+    if (event.metaKey) {
+      parts.push('mod')
+    }
+
+    if (event.ctrlKey) {
+      parts.push('ctrl')
+    }
+  } else if (event.ctrlKey) {
     parts.push('mod')
   }
 
@@ -133,6 +140,10 @@ export function formatCombo(combo: string): string {
       return IS_MAC ? '⌘' : 'Ctrl'
     }
 
+    if (mod === 'ctrl') {
+      return IS_MAC ? '⌃' : 'Ctrl'
+    }
+
     if (mod === 'alt') {
       return IS_MAC ? '⌥' : 'Alt'
     }
@@ -156,9 +167,9 @@ export function isEditableTarget(target: EventTarget | null): boolean {
 
   return Boolean(
     el?.isContentEditable ||
-      el instanceof HTMLInputElement ||
-      el instanceof HTMLTextAreaElement ||
-      el instanceof HTMLSelectElement
+    el instanceof HTMLInputElement ||
+    el instanceof HTMLTextAreaElement ||
+    el instanceof HTMLSelectElement
   )
 }
 

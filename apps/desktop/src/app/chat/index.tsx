@@ -10,7 +10,6 @@ import type * as React from 'react'
 import { Suspense, useCallback, useMemo, useRef } from 'react'
 import { useLocation } from 'react-router-dom'
 
-import { TerminalSlot } from '@/app/right-sidebar/terminal/persistent'
 import { Thread } from '@/components/assistant-ui/thread'
 import { Backdrop } from '@/components/Backdrop'
 import { PromptOverlays } from '@/components/prompt-overlays'
@@ -127,7 +126,10 @@ function ChatHeader({
     <header className={cn(titlebarHeaderBaseClass, isRoutedSessionView && titlebarHeaderShadowClass)}>
       <div
         className="min-w-0 flex-1"
-        style={{ maxWidth: 'calc(100vw - var(--titlebar-content-inset,0px) - var(--titlebar-tools-right) - var(--titlebar-tools-width) - 1.5rem)' }}
+        style={{
+          maxWidth:
+            'calc(100vw - var(--titlebar-content-inset,0px) - var(--titlebar-tools-right) - var(--titlebar-tools-width) - 1.5rem)'
+        }}
       >
         <SessionActionsMenu
           align="start"
@@ -389,9 +391,6 @@ export function ChatView({
         <ChatDropOverlay kind={dragKind} />
         <ChatSwapOverlay profile={gatewaySwapTarget} />
       </div>
-      <section className="flex h-56 min-h-[10rem] shrink-0 border-t border-(--ui-stroke-secondary) bg-(--ui-editor-surface-background)">
-        <TerminalSlot />
-      </section>
     </div>
   )
 }

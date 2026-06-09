@@ -94,19 +94,35 @@ const remPx = () =>
     ? 16
     : Number.parseFloat(window.getComputedStyle(document.documentElement).fontSize) || 16
 
-// Resolves PaneProps.minWidth/maxWidth (number | "Npx" | "Nrem") to pixels for drag clamping.
+const viewportPx = () => (typeof window === 'undefined' ? 1280 : window.innerWidth)
+
+// Resolves PaneProps.minWidth/maxWidth (number | "Npx" | "Nrem" | "Nvw" | "N%") to
+// pixels for drag clamping. Viewport units resolve against the current window width.
 function widthToPx(value: WidthValue | undefined) {
   if (typeof value === 'number') {
     return Number.isFinite(value) ? value : undefined
   }
 
-  const match = value?.trim().match(/^(-?\d*\.?\d+)(px|rem)?$/)
+  const match = value?.trim().match(/^(-?\d*\.?\d+)(px|rem|vw|%)?$/)
 
   if (!match) {
     return undefined
   }
 
-  return Number.parseFloat(match[1]) * (match[2] === 'rem' ? remPx() : 1)
+  const n = Number.parseFloat(match[1])
+
+  switch (match[2]) {
+    case 'rem':
+      return n * remPx()
+
+    case 'vw':
+
+    case '%':
+      return (n * viewportPx()) / 100
+
+    default:
+      return n
+  }
 }
 
 function isRole(child: unknown, role: 'pane' | 'main'): child is ReactElement {

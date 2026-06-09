@@ -1,6 +1,6 @@
 import { useStore } from '@nanostores/react'
 import { atom } from 'nanostores'
-import { type CSSProperties, useEffect, useLayoutEffect, useRef, useState } from 'react'
+import { type CSSProperties, useEffect, useLayoutEffect, useMemo, useRef, useState } from 'react'
 
 import { useTheme } from '@/themes/context'
 
@@ -59,7 +59,7 @@ const sameRect = (a: Rect | null, b: Rect) =>
 export function PersistentTerminal({ cwd, onAddSelectionToChat }: PersistentTerminalProps) {
   const slot = useStore($slot)
   const { resolvedMode } = useTheme()
-  const theme = terminalTheme(resolvedMode)
+  const theme = useMemo(() => terminalTheme(resolvedMode), [resolvedMode])
   const [rect, setRect] = useState<Rect | null>(null)
   const [ready, setReady] = useState(false)
 
