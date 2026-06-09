@@ -8,6 +8,27 @@ export const ARTIFACTS_ROUTE = '/artifacts'
 export const CRON_ROUTE = '/cron'
 export const PROFILES_ROUTE = '/profiles'
 export const AGENTS_ROUTE = '/agents'
+export const AGENT_CONFIG_ROUTE = '/agents/:agentId/config'
+export const AGENT_DOWNLOADS_ROUTE = '/agents/:agentId/downloads'
+// Merged dashboard admin pages render inline in the shell's own HashRouter,
+// mounted by DesktopController as `panel/*`. Individual pages live at
+// `${PANEL_ROUTE}/<page>` (e.g. /panel/analytics). No nested router.
+export const PANEL_ROUTE = '/panel'
+
+export const SESSIONS_ROUTE = '/sessions'
+export const MODELS_ROUTE = '/models'
+export const LOGS_ROUTE = '/logs'
+export const PLUGINS_ROUTE = '/plugins'
+export const MCP_ROUTE = '/mcp'
+export const CHANNELS_ROUTE = '/channels'
+export const WEBHOOKS_ROUTE = '/webhooks'
+export const PAIRING_ROUTE = '/pairing'
+export const CONFIG_ROUTE = '/config'
+export const ENV_ROUTE = '/env'
+export const SYSTEM_ROUTE = '/system'
+export const DOCS_ROUTE = '/docs'
+export const KANBAN_ROUTE = '/kanban'
+export const ACHIEVEMENTS_ROUTE = '/achievements'
 
 export type AppView =
   | 'agents'

@@ -138,6 +138,32 @@ function DialogDescription({ className, ...props }: React.ComponentProps<typeof 
   )
 }
 
+// ── useDialog: confirm-dialog hook ────────────────────────────────────────
+// The 2026.6.5 snapshot ships src/app/agent-config importing `useDialog().confirm`
+// but never implemented or exported it — a hard MISSING_EXPORT that fails the
+// renderer bundle. Minimal functional implementation: an imperative async
+// confirm backed by the host confirm dialog, returning true when the user
+// accepts. Swap for a Radix <Dialog>-driven provider if richer UI is wanted.
+export interface ConfirmDialogOptions {
+  title?: string
+  description?: string
+  actionLabel?: string
+  cancelLabel?: string
+  destructive?: boolean
+}
+
+export function useDialog() {
+  const confirm = React.useCallback((options?: ConfirmDialogOptions): Promise<boolean> => {
+    const message = [options?.title, options?.description].filter(Boolean).join('\n\n')
+    if (typeof window === 'undefined' || typeof window.confirm !== 'function') {
+      return Promise.resolve(true)
+    }
+    return Promise.resolve(window.confirm(message || 'Are you sure?'))
+  }, [])
+
+  return { confirm }
+}
+
 export {
   Dialog,
   DialogClose,

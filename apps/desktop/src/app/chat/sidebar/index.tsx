@@ -85,7 +85,7 @@ import {
   sessionPinId
 } from '@/store/session'
 
-import { type AppView, ARTIFACTS_ROUTE, MESSAGING_ROUTE, SKILLS_ROUTE } from '../../routes'
+import { type AppView, ARTIFACTS_ROUTE, MESSAGING_ROUTE, PANEL_ROUTE, SKILLS_ROUTE } from '../../routes'
 import { SidebarPanelLabel } from '../../shell/sidebar-label'
 import type { SidebarNavItem } from '../../types'
 
@@ -117,6 +117,24 @@ const SIDEBAR_NAV: SidebarNavItem[] = [
   },
   { id: 'messaging', label: '', icon: props => <Codicon name="comment" {...props} />, route: MESSAGING_ROUTE },
   { id: 'artifacts', label: '', icon: props => <Codicon name="files" {...props} />, route: ARTIFACTS_ROUTE }
+]
+
+// Merged dashboard admin pages — rendered inline by DesktopController under
+// `${PANEL_ROUTE}/*`. Listed as their own "Panel" group in the sidebar.
+const PANEL_NAV: SidebarNavItem[] = [
+  { id: 'panel-analytics', label: 'Analytics', icon: props => <Codicon name="graph" {...props} />, route: `${PANEL_ROUTE}/analytics` },
+  { id: 'panel-models', label: 'Models', icon: props => <Codicon name="chip" {...props} />, route: `${PANEL_ROUTE}/models` },
+  { id: 'panel-logs', label: 'Logs', icon: props => <Codicon name="output" {...props} />, route: `${PANEL_ROUTE}/logs` },
+  { id: 'panel-mcp', label: 'MCP', icon: props => <Codicon name="plug" {...props} />, route: `${PANEL_ROUTE}/mcp` },
+  { id: 'panel-channels', label: 'Channels', icon: props => <Codicon name="broadcast" {...props} />, route: `${PANEL_ROUTE}/channels` },
+  { id: 'panel-webhooks', label: 'Webhooks', icon: props => <Codicon name="link" {...props} />, route: `${PANEL_ROUTE}/webhooks` },
+  { id: 'panel-pairing', label: 'Pairing', icon: props => <Codicon name="shield" {...props} />, route: `${PANEL_ROUTE}/pairing` },
+  { id: 'panel-env', label: 'Keys', icon: props => <Codicon name="key" {...props} />, route: `${PANEL_ROUTE}/env` },
+  { id: 'panel-config', label: 'Config', icon: props => <Codicon name="settings-gear" {...props} />, route: `${PANEL_ROUTE}/config` },
+  { id: 'panel-system', label: 'System', icon: props => <Codicon name="tools" {...props} />, route: `${PANEL_ROUTE}/system` },
+  { id: 'panel-plugins', label: 'Plugins', icon: props => <Codicon name="extensions" {...props} />, route: `${PANEL_ROUTE}/plugins` },
+  { id: 'panel-docs', label: 'Docs', icon: props => <Codicon name="book" {...props} />, route: `${PANEL_ROUTE}/docs` },
+  { id: 'panel-group-chat', label: 'Group Chat', icon: props => <Codicon name="comment-discussion" {...props} />, route: `${PANEL_ROUTE}/group-chat` }
 ]
 
 const WORKSPACE_PAGE = 5
@@ -807,6 +825,35 @@ export function ChatSidebar({
                   </SidebarMenuItem>
                 )
               })}
+            </SidebarMenu>
+          </SidebarGroupContent>
+        </SidebarGroup>
+
+        <SidebarGroup className="min-h-0 shrink-0 p-0 pb-2">
+          {sidebarOpen && (
+            <div className="px-2 pb-1 pt-1 text-[0.6875rem] font-medium uppercase tracking-[0.08em] text-(--ui-text-tertiary)">
+              Panel
+            </div>
+          )}
+          <SidebarGroupContent className="max-h-[42vh] overflow-y-auto">
+            <SidebarMenu className="gap-px">
+              {PANEL_NAV.map(item => (
+                <SidebarMenuItem key={item.id}>
+                  <SidebarMenuButton
+                    className="flex h-7 w-full justify-start gap-2 rounded-md border border-transparent px-2 text-left text-[0.8125rem] font-medium text-(--ui-text-secondary) transition-colors duration-100 ease-out hover:bg-(--ui-control-hover-background) hover:text-foreground hover:transition-none"
+                    onClick={() => onNavigate(item)}
+                    tooltip={s.nav[item.id] ?? item.label}
+                    type="button"
+                  >
+                    <item.icon className="size-4 shrink-0 text-[color-mix(in_srgb,currentColor_72%,transparent)]" />
+                    {sidebarOpen && (
+                      <span className="min-w-0 flex-1 truncate max-[46.25rem]:hidden">
+                        {s.nav[item.id] ?? item.label}
+                      </span>
+                    )}
+                  </SidebarMenuButton>
+                </SidebarMenuItem>
+              ))}
             </SidebarMenu>
           </SidebarGroupContent>
         </SidebarGroup>

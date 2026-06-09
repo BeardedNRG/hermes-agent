@@ -106,7 +106,7 @@ export function ProjectTree({
           rowHeight={ROW_HEIGHT}
           width={size.width}
         >
-          {props => (
+          {(props: NodeRendererProps<TreeNode>) => (
             <ProjectTreeRow
               {...props}
               onAttachFile={onActivateFile}

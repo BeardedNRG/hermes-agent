@@ -88,7 +88,15 @@ export type CommandDispatchResponse =
   | SkillCommandDispatchResponse
   | SendCommandDispatchResponse
 
-export type SidebarNavId = 'artifacts' | 'command-center' | 'messaging' | 'new-session' | 'settings' | 'skills'
+export type SidebarNavId =
+  | 'artifacts'
+  | 'command-center'
+  | 'messaging'
+  | 'new-session'
+  | 'settings'
+  | 'skills'
+  // Merged dashboard "Panel" pages — ids like 'panel-analytics', 'panel-mcp'.
+  | `panel-${string}`
 
 export interface SidebarNavItem {
   id: SidebarNavId

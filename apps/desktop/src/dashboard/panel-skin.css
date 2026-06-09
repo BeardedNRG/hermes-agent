@@ -1,0 +1,237 @@
+/* ═══════════════════════════════════════════════════════════════════════════
+   PRISM — holographic liquid-chrome skin for the merged Hermes "Panel".
+
+   Sourced from ui-ux-pro-max design intelligence:
+     • Style: "Gradient Mesh / Aurora Evolved" — iridescent/holographic mesh,
+       colors #00FFFF #FF00FF #0066FF #00FF66, mix-blend screen, hue-rotate
+       shimmer, flowing animation.
+     • Glass base: "Modern Dark (Cinema)" — deep #020203 / #050506 / #0a0a0c,
+       surface rgba(255 255 255/.05), hairline rgba(255 255 255/.08) border,
+       radius 16, easing cubic-bezier(0.16 1 0.3 1), animated ambient blobs.
+     • Type: Space Grotesk (display) + DM Sans (body).
+
+   Scoped to [data-hermes-panel]: isolated stacking context so the animated
+   iridescent mesh sits BEHIND page content (lifted to z-index 1). Text stays
+   crisp; nothing leaks into the chat shell.
+   ═══════════════════════════════════════════════════════════════════════════ */
+
+@import url("https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@400;500;600;700&family=DM+Sans:wght@400;500;700&display=swap");
+
+[data-hermes-panel] {
+  /* Holographic mesh stops. */
+  --iris-1: #00ffff;
+  --iris-2: #ff00ff;
+  --iris-3: #0066ff;
+  --iris-4: #00ff66;
+  --flow-duration: 22s;
+
+  /* Layer vars — deep cinema black, bright ice ink. */
+  --background-base: #050506;
+  --background: #050506;
+  --background-alpha: 1;
+  --midground-base: #ededf2;
+  --midground: #ededf2;
+  --midground-alpha: 1;
+  --foreground-base: #ffffff;
+  --foreground: color-mix(in srgb, #ffffff 0%, transparent);
+  --foreground-alpha: 0;
+  --warm-glow: rgba(0, 234, 255, 0.22);
+
+  /* Glass surfaces — barely-there white frost over the mesh. */
+  --color-card: rgba(255, 255, 255, 0.05);
+  --color-card-foreground: #f3f4f8;
+  --color-popover: rgba(10, 12, 18, 0.9);
+  --color-popover-foreground: #f3f4f8;
+  --color-secondary: rgba(255, 255, 255, 0.07);
+  --color-secondary-foreground: #f3f4f8;
+  --color-muted: rgba(255, 255, 255, 0.045);
+  --color-muted-foreground: #9aa3b8;
+  --color-accent: rgba(0, 234, 255, 0.16);
+  --color-accent-foreground: #e9feff;
+
+  --color-border: rgba(255, 255, 255, 0.1);
+  --color-input: rgba(255, 255, 255, 0.045);
+  --color-ring: #34e7ff;
+
+  --color-primary: #34e7ff;
+  --color-primary-foreground: #03121a;
+  --color-foreground: #ededf2;
+  --color-success: #2ee6a6;
+  --color-warning: #ffce4d;
+  --color-destructive: #ff5d7e;
+  --color-destructive-foreground: #ffffff;
+
+  --color-text-primary: #f5f6fb;
+  --color-text-secondary: #9aa3b8;
+  --color-text-tertiary: #646c82;
+
+  --theme-radius: 1rem;
+  --radius: 1rem;
+  --ease-prism: cubic-bezier(0.16, 1, 0.3, 1);
+
+  /* Type system from the spec. */
+  --theme-font-sans: "DM Sans", system-ui, -apple-system, "Segoe UI", sans-serif;
+  --theme-font-display: "Space Grotesk", var(--theme-font-sans);
+
+  position: relative;
+  isolation: isolate;
+  min-height: 0;
+  color: #cdd3e3;
+  /* Cinema base: fine grain over a deep vertical black gradient. */
+  background-image:
+    url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='200' height='200'%3E%3Cfilter id='f'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.6' numOctaves='2' stitchTiles='stitch'/%3E%3CfeColorMatrix type='saturate' values='0'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23f)' opacity='0.05'/%3E%3C/svg%3E"),
+    radial-gradient(120% 120% at 50% 64%, transparent 36%, rgba(0, 0, 0, 0.7) 100%),
+    linear-gradient(180deg, #0a0a0f 0%, #050506 52%, #020203 100%);
+  background-size: 200px 200px, cover, cover;
+  background-blend-mode: overlay, multiply, normal;
+  background-color: #050506;
+  font-family: var(--theme-font-sans);
+  -webkit-font-smoothing: antialiased;
+  text-rendering: optimizeLegibility;
+}
+
+/* Lift real page content above the holographic mesh. */
+[data-hermes-panel] > * {
+  position: relative;
+  z-index: 1;
+}
+
+/* ── HOLOGRAPHIC IRIDESCENT MESH — flowing aurora blobs, screen-blended, with a
+   slow hue-rotate shimmer. This is the liquid-chrome light source. */
+[data-hermes-panel]::after {
+  content: "";
+  position: absolute;
+  inset: -30%;
+  z-index: 0;
+  pointer-events: none;
+  background:
+    radial-gradient(34% 34% at 24% 28%, var(--iris-1), transparent 60%),
+    radial-gradient(40% 40% at 76% 22%, var(--iris-2), transparent 62%),
+    radial-gradient(44% 44% at 66% 78%, var(--iris-3), transparent 64%),
+    radial-gradient(38% 38% at 30% 76%, var(--iris-4), transparent 62%);
+  filter: blur(64px) saturate(150%);
+  opacity: 0.42;
+  mix-blend-mode: screen;
+  animation:
+    prism-flow var(--flow-duration) ease-in-out infinite alternate,
+    prism-shimmer 16s linear infinite;
+}
+
+@keyframes prism-flow {
+  0% { transform: translate3d(-5%, -4%, 0) scale(1.08) rotate(0deg); }
+  50% { transform: translate3d(6%, 4%, 0) scale(1.22) rotate(8deg); }
+  100% { transform: translate3d(-3%, 5%, 0) scale(1.12) rotate(-6deg); }
+}
+@keyframes prism-shimmer {
+  0% { filter: blur(64px) saturate(150%) hue-rotate(0deg); }
+  100% { filter: blur(64px) saturate(150%) hue-rotate(360deg); }
+}
+@media (prefers-reduced-motion: reduce) {
+  [data-hermes-panel]::after { animation: none; }
+}
+
+/* Prism scan-line across the top edge. */
+[data-hermes-panel]::before {
+  content: "";
+  position: absolute;
+  inset: 0 0 auto 0;
+  height: 2px;
+  z-index: 2;
+  background: linear-gradient(90deg, transparent, var(--iris-1), var(--iris-2), var(--iris-4), transparent);
+  box-shadow: 0 0 16px rgba(0, 234, 255, 0.6);
+  pointer-events: none;
+}
+
+/* Display headers — Space Grotesk with a holographic glow. */
+[data-hermes-panel] h1,
+[data-hermes-panel] h2,
+[data-hermes-panel] h3,
+[data-hermes-panel] .font-mondwest {
+  font-family: var(--theme-font-display);
+  color: #f6f7fc;
+  text-shadow: 0 0 1px rgba(0, 234, 255, 0.5), 0 0 18px rgba(120, 90, 255, 0.3);
+  letter-spacing: 0.01em;
+}
+
+/* ── LIQUID-CHROME GLASS PANELS — frosted, hairline-rimmed, specular top sheen,
+   iridescent dual-glow (cyan + magenta) so edges read like refracted light. */
+[data-hermes-panel] [class*="rounded-xl"],
+[data-hermes-panel] [class*="rounded-lg"],
+[data-hermes-panel] [class*="rounded-2xl"] {
+  backdrop-filter: blur(18px) saturate(160%);
+  -webkit-backdrop-filter: blur(18px) saturate(160%);
+  border-color: rgba(255, 255, 255, 0.1);
+  background-image: linear-gradient(
+    160deg,
+    rgba(255, 255, 255, 0.1) 0%,
+    rgba(255, 255, 255, 0.02) 24%,
+    transparent 56%
+  );
+  box-shadow:
+    0 1px 0 0 rgba(255, 255, 255, 0.16) inset,
+    0 20px 56px -22px rgba(0, 0, 0, 0.9),
+    0 0 30px -16px rgba(0, 234, 255, 0.45),
+    0 0 30px -16px rgba(255, 0, 200, 0.3);
+  transition: box-shadow 0.3s var(--ease-prism), transform 0.2s var(--ease-prism);
+}
+
+/* ── GLOWING BUTTONS — frost + iridescent bloom + lift; spring-ish easing. */
+[data-hermes-panel] button {
+  transition: box-shadow 0.2s var(--ease-prism), transform 0.15s var(--ease-prism),
+    text-shadow 0.2s var(--ease-prism), border-color 0.2s var(--ease-prism);
+}
+[data-hermes-panel] button:hover {
+  border-color: var(--iris-1);
+  transform: translateY(-1px);
+  text-shadow: 0 0 10px rgba(0, 234, 255, 0.6);
+  box-shadow:
+    0 0 0 1px rgba(0, 234, 255, 0.6),
+    0 0 22px -2px rgba(0, 234, 255, 0.6),
+    0 0 22px -6px rgba(255, 0, 200, 0.5),
+    0 10px 24px -12px rgba(0, 0, 0, 0.8);
+}
+[data-hermes-panel] button:active { transform: translateY(0) scale(0.97); }
+
+/* Toggles glow when on. */
+[data-hermes-panel] [role="switch"][aria-checked="true"],
+[data-hermes-panel] [data-state="checked"] {
+  box-shadow: 0 0 0 1px var(--iris-1), 0 0 16px -2px rgba(0, 234, 255, 0.7);
+}
+
+/* Inputs: glass that ignites cyan on focus. */
+[data-hermes-panel] input,
+[data-hermes-panel] textarea,
+[data-hermes-panel] select {
+  background-color: rgba(255, 255, 255, 0.045);
+  border-color: rgba(255, 255, 255, 0.12);
+  transition: border-color 0.18s var(--ease-prism), box-shadow 0.18s var(--ease-prism);
+}
+[data-hermes-panel] input:focus,
+[data-hermes-panel] textarea:focus,
+[data-hermes-panel] select:focus,
+[data-hermes-panel] input:focus-visible,
+[data-hermes-panel] textarea:focus-visible {
+  outline: none;
+  border-color: var(--iris-1);
+  box-shadow: 0 0 0 1px var(--iris-1), 0 0 20px -4px rgba(0, 234, 255, 0.7);
+}
+
+/* Iridescent scrollbars. */
+[data-hermes-panel] ::-webkit-scrollbar { width: 11px; height: 11px; }
+[data-hermes-panel] ::-webkit-scrollbar-thumb {
+  background: linear-gradient(180deg, rgba(0, 234, 255, 0.55), rgba(255, 0, 200, 0.45));
+  border: 3px solid transparent;
+  border-radius: 9999px;
+  background-clip: padding-box;
+}
+[data-hermes-panel] ::-webkit-scrollbar-thumb:hover {
+  background: linear-gradient(180deg, #34e7ff, #ff4dd8);
+  background-clip: padding-box;
+}
+[data-hermes-panel] ::-webkit-scrollbar-track { background: transparent; }
+
+[data-hermes-panel] a:not([class]) {
+  color: #6fe6ff;
+  text-shadow: 0 0 10px rgba(0, 234, 255, 0.45);
+  text-underline-offset: 2px;
+}

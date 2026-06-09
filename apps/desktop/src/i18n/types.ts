@@ -191,6 +191,19 @@ export interface Translations {
     resetConfirm: string
     exportFailed: string
     resetFailed: string
+    // Optional — consumed by the agent-config view (added in the 2026.6.5
+    // snapshot) via optional chaining with inline fallbacks, so locales need
+    // not define them. Typed here so the access type-checks.
+    saveChangesTitle?: string
+    saveChangesDescription?: string
+    saveChangesConfirm?: string
+    cancel?: string
+    auth?: {
+      authRequired?: string
+      authRequiredDescription?: string
+      redirectUriAllowlist?: string
+      redirectUriAllowlistDescription?: string
+    }
     nav: {
       providers: string
       providerAccounts: string
