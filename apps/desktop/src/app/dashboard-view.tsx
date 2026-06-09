@@ -1,4 +1,6 @@
-import { Navigate, Route, Routes } from 'react-router-dom'
+import { Navigate, Route, Routes, useLocation, useNavigate } from 'react-router-dom'
+
+import { panelHubForPath } from './routes'
 
 import { PageHeaderProvider } from '@dash/contexts/PageHeaderProvider'
 import { SystemActionsProvider } from '@dash/contexts/SystemActions'
@@ -36,6 +38,42 @@ import '@dash/panel-skin.css'
 // exposePluginSDK() once on module load so plugin bundles can resolve the SDK.
 exposePluginSDK()
 
+// Sub-tab bar for the current PANEL hub. The sidebar navigates between the 5
+// hubs; this strip switches pages WITHIN a multi-page hub (Connections, System,
+// Settings). Single-page hubs (Dashboard, Models) render no strip.
+function PanelSubTabs() {
+  const { pathname } = useLocation()
+  const navigate = useNavigate()
+  const hub = panelHubForPath(pathname)
+
+  if (!hub || hub.pages.length < 2) {
+    return null
+  }
+
+  return (
+    <nav className="mb-3 flex shrink-0 flex-wrap items-center gap-1 border-b border-(--ui-stroke-tertiary) pb-2">
+      {hub.pages.map(page => {
+        const active = pathname === page.path || pathname.startsWith(`${page.path}/`)
+
+        return (
+          <button
+            className={
+              active
+                ? 'rounded-md border border-(--ui-stroke-tertiary) bg-(--ui-control-active-background) px-3 py-1 text-[0.8125rem] font-medium text-foreground'
+                : 'rounded-md border border-transparent px-3 py-1 text-[0.8125rem] font-medium text-(--ui-text-secondary) transition-colors hover:bg-(--ui-control-hover-background) hover:text-foreground'
+            }
+            key={page.id}
+            onClick={() => navigate(page.path)}
+            type="button"
+          >
+            {page.label}
+          </button>
+        )
+      })}
+    </nav>
+  )
+}
+
 export function DashboardView() {
   return (
     <DashI18nProvider>
@@ -46,6 +84,7 @@ export function DashboardView() {
               data-hermes-panel
               className="flex min-h-0 min-w-0 flex-1 flex-col overflow-y-auto px-3 pt-2 sm:px-6 sm:pt-4 lg:pt-6"
             >
+              <PanelSubTabs />
               <Routes>
                 <Route index element={<Navigate replace to="analytics" />} />
                 <Route path="analytics" element={<AnalyticsPage />} />

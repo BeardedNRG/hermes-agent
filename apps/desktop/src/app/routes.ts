@@ -37,6 +37,7 @@ export type AppView =
   | 'command-center'
   | 'cron'
   | 'messaging'
+  | 'panel'
   | 'profiles'
   | 'settings'
   | 'skills'
@@ -48,6 +49,7 @@ export type AppRouteId =
   | 'cron'
   | 'messaging'
   | 'new'
+  | 'panel'
   | 'profiles'
   | 'settings'
   | 'skills'
@@ -67,7 +69,8 @@ export const APP_ROUTES = [
   { id: 'artifacts', path: ARTIFACTS_ROUTE, view: 'artifacts' },
   { id: 'cron', path: CRON_ROUTE, view: 'cron' },
   { id: 'profiles', path: PROFILES_ROUTE, view: 'profiles' },
-  { id: 'agents', path: AGENTS_ROUTE, view: 'agents' }
+  { id: 'agents', path: AGENTS_ROUTE, view: 'agents' },
+  { id: 'panel', path: PANEL_ROUTE, view: 'panel' }
 ] as const satisfies readonly AppRoute[]
 
 const APP_VIEW_BY_PATH = new Map<string, AppView>(APP_ROUTES.map(route => [route.path, route.view]))
@@ -105,5 +108,70 @@ export function appViewForPath(pathname: string): AppView {
     return 'chat'
   }
 
+  // Merged dashboard pages live under `${PANEL_ROUTE}/<page>` and render as a
+  // single pane view. Match the whole subtree so sidebar/statusbar/titlebar
+  // logic sees 'panel' instead of falling through to 'chat'.
+  if (pathname === PANEL_ROUTE || pathname.startsWith(`${PANEL_ROUTE}/`)) {
+    return 'panel'
+  }
+
   return APP_VIEW_BY_PATH.get(pathname) ?? 'chat'
+}
+
+// ---------------------------------------------------------------------------
+// PANEL hubs — the 13 flat dashboard pages are grouped into 5 ops-focused hubs.
+// The sidebar shows one entry per hub (navigating to the hub's first page); a
+// sub-tab bar inside the panel pane switches between a hub's pages. This is the
+// single source of truth shared by the sidebar and the sub-tab bar. No JSX here
+// (icons are mapped by id in the sidebar) so routes.ts stays import-light.
+// ---------------------------------------------------------------------------
+export interface PanelHubPage {
+  id: string
+  label: string
+  path: string
+}
+
+export interface PanelHub {
+  id: string
+  label: string
+  pages: readonly PanelHubPage[]
+}
+
+const panelPath = (page: string) => `${PANEL_ROUTE}/${page}`
+
+export const PANEL_HUBS: readonly PanelHub[] = [
+  { id: 'dashboard', label: 'Dashboard', pages: [{ id: 'analytics', label: 'Analytics', path: panelPath('analytics') }] },
+  { id: 'models', label: 'Models', pages: [{ id: 'models', label: 'Models', path: panelPath('models') }] },
+  {
+    id: 'connections',
+    label: 'Connections',
+    pages: [
+      { id: 'channels', label: 'Channels', path: panelPath('channels') },
+      { id: 'webhooks', label: 'Webhooks', path: panelPath('webhooks') },
+      { id: 'pairing', label: 'Pairing', path: panelPath('pairing') },
+      { id: 'mcp', label: 'MCP', path: panelPath('mcp') }
+    ]
+  },
+  {
+    id: 'system',
+    label: 'System',
+    pages: [
+      { id: 'logs', label: 'Logs', path: panelPath('logs') },
+      { id: 'system', label: 'System', path: panelPath('system') },
+      { id: 'plugins', label: 'Plugins', path: panelPath('plugins') }
+    ]
+  },
+  {
+    id: 'settings',
+    label: 'Settings',
+    pages: [
+      { id: 'env', label: 'Keys', path: panelPath('env') },
+      { id: 'config', label: 'Config', path: panelPath('config') },
+      { id: 'docs', label: 'Docs', path: panelPath('docs') }
+    ]
+  }
+] as const
+
+export function panelHubForPath(pathname: string): PanelHub | undefined {
+  return PANEL_HUBS.find(hub => hub.pages.some(page => pathname === page.path || pathname.startsWith(`${page.path}/`)))
 }

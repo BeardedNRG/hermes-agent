@@ -85,8 +85,16 @@ import {
   sessionPinId
 } from '@/store/session'
 
-import { type AppView, ARTIFACTS_ROUTE, MESSAGING_ROUTE, PANEL_ROUTE, SKILLS_ROUTE } from '../../routes'
+import {
+  type AppView,
+  ARTIFACTS_ROUTE,
+  MESSAGING_ROUTE,
+  PANEL_HUBS,
+  panelHubForPath,
+  SKILLS_ROUTE
+} from '../../routes'
 import { SidebarPanelLabel } from '../../shell/sidebar-label'
+import { useLocation } from 'react-router-dom'
 import type { SidebarNavItem } from '../../types'
 
 import { SidebarCronJobsSection } from './cron-jobs-section'
@@ -119,23 +127,24 @@ const SIDEBAR_NAV: SidebarNavItem[] = [
   { id: 'artifacts', label: '', icon: props => <Codicon name="files" {...props} />, route: ARTIFACTS_ROUTE }
 ]
 
-// Merged dashboard admin pages — rendered inline by DesktopController under
-// `${PANEL_ROUTE}/*`. Listed as their own "Panel" group in the sidebar.
-const PANEL_NAV: SidebarNavItem[] = [
-  { id: 'panel-analytics', label: 'Analytics', icon: props => <Codicon name="graph" {...props} />, route: `${PANEL_ROUTE}/analytics` },
-  { id: 'panel-models', label: 'Models', icon: props => <Codicon name="chip" {...props} />, route: `${PANEL_ROUTE}/models` },
-  { id: 'panel-logs', label: 'Logs', icon: props => <Codicon name="output" {...props} />, route: `${PANEL_ROUTE}/logs` },
-  { id: 'panel-mcp', label: 'MCP', icon: props => <Codicon name="plug" {...props} />, route: `${PANEL_ROUTE}/mcp` },
-  { id: 'panel-channels', label: 'Channels', icon: props => <Codicon name="broadcast" {...props} />, route: `${PANEL_ROUTE}/channels` },
-  { id: 'panel-webhooks', label: 'Webhooks', icon: props => <Codicon name="link" {...props} />, route: `${PANEL_ROUTE}/webhooks` },
-  { id: 'panel-pairing', label: 'Pairing', icon: props => <Codicon name="shield" {...props} />, route: `${PANEL_ROUTE}/pairing` },
-  { id: 'panel-env', label: 'Keys', icon: props => <Codicon name="key" {...props} />, route: `${PANEL_ROUTE}/env` },
-  { id: 'panel-config', label: 'Config', icon: props => <Codicon name="settings-gear" {...props} />, route: `${PANEL_ROUTE}/config` },
-  { id: 'panel-system', label: 'System', icon: props => <Codicon name="tools" {...props} />, route: `${PANEL_ROUTE}/system` },
-  { id: 'panel-plugins', label: 'Plugins', icon: props => <Codicon name="extensions" {...props} />, route: `${PANEL_ROUTE}/plugins` },
-  { id: 'panel-docs', label: 'Docs', icon: props => <Codicon name="book" {...props} />, route: `${PANEL_ROUTE}/docs` },
-  { id: 'panel-group-chat', label: 'Group Chat', icon: props => <Codicon name="comment-discussion" {...props} />, route: `${PANEL_ROUTE}/group-chat` }
-]
+// Merged dashboard admin pages — grouped into 5 ops-focused hubs (see
+// PANEL_HUBS in routes.ts). The sidebar shows one entry per hub, navigating to
+// the hub's first page; a sub-tab bar inside the panel pane switches pages
+// within a hub. Icons are mapped by hub id here (routes.ts stays JSX-free).
+const PANEL_HUB_ICON: Record<string, string> = {
+  dashboard: 'dashboard',
+  models: 'chip',
+  connections: 'broadcast',
+  system: 'tools',
+  settings: 'settings-gear'
+}
+
+const PANEL_NAV: SidebarNavItem[] = PANEL_HUBS.map(hub => ({
+  id: `panel-${hub.id}`,
+  label: hub.label,
+  icon: props => <Codicon name={PANEL_HUB_ICON[hub.id] ?? 'circle-outline'} {...props} />,
+  route: hub.pages[0].path
+}))
 
 const WORKSPACE_PAGE = 5
 // ALL-profiles view: show only the latest N per profile up front to keep the
@@ -414,6 +423,10 @@ export function ChatSidebar({
   }, [])
 
   const activeSidebarSessionId = currentView === 'chat' ? selectedSessionId : null
+
+  // Which PANEL hub the current route belongs to (drives sidebar highlight).
+  const { pathname: routePathname } = useLocation()
+  const activePanelHubId = currentView === 'panel' ? panelHubForPath(routePathname)?.id : undefined
 
   const dndSensors = useSensors(
     useSensor(PointerSensor, { activationConstraint: { distance: 6 } }),
@@ -837,10 +850,17 @@ export function ChatSidebar({
           )}
           <SidebarGroupContent className="max-h-[42vh] overflow-y-auto">
             <SidebarMenu className="gap-px">
-              {PANEL_NAV.map(item => (
+              {PANEL_NAV.map(item => {
+                const active = item.id === `panel-${activePanelHubId}`
+
+                return (
                 <SidebarMenuItem key={item.id}>
                   <SidebarMenuButton
-                    className="flex h-7 w-full justify-start gap-2 rounded-md border border-transparent px-2 text-left text-[0.8125rem] font-medium text-(--ui-text-secondary) transition-colors duration-100 ease-out hover:bg-(--ui-control-hover-background) hover:text-foreground hover:transition-none"
+                    className={cn(
+                      'flex h-7 w-full justify-start gap-2 rounded-md border border-transparent px-2 text-left text-[0.8125rem] font-medium text-(--ui-text-secondary) transition-colors duration-100 ease-out hover:bg-(--ui-control-hover-background) hover:text-foreground hover:transition-none',
+                      active &&
+                        'border-(--ui-stroke-tertiary) bg-(--ui-control-active-background) text-foreground shadow-none hover:border-(--ui-stroke-tertiary)!'
+                    )}
                     onClick={() => onNavigate(item)}
                     tooltip={s.nav[item.id] ?? item.label}
                     type="button"
@@ -853,7 +873,8 @@ export function ChatSidebar({
                     )}
                   </SidebarMenuButton>
                 </SidebarMenuItem>
-              ))}
+                )
+              })}
             </SidebarMenu>
           </SidebarGroupContent>
         </SidebarGroup>
