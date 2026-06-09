@@ -4,7 +4,7 @@ import { Dialog as DialogPrimitive } from 'radix-ui'
 import { useCallback, useEffect, useMemo, useState } from 'react'
 import { useNavigate } from 'react-router-dom'
 
-import { $terminalTakeover, setTerminalTakeover } from '@/app/right-sidebar/store'
+import { setTerminalTakeover } from '@/app/right-sidebar/store'
 import { Command, CommandEmpty, CommandGroup, CommandInput, CommandItem, CommandList } from '@/components/ui/command'
 import { KbdGroup } from '@/components/ui/kbd'
 import { getHermesConfigRecord, listSessions } from '@/hermes'
@@ -156,7 +156,6 @@ const THEME_MODES: ReadonlyArray<{ icon: IconComponent; mode: ThemeMode }> = [
 export function CommandPalette() {
   const { t } = useI18n()
   const open = useStore($commandPaletteOpen)
-  const terminalOpen = useStore($terminalTakeover)
   const bindings = useStore($bindings)
   const navigate = useNavigate()
   const { availableThemes, mode, resolvedMode, setMode, setTheme, themeName } = useTheme()
@@ -235,7 +234,6 @@ export function CommandPalette() {
           },
           {
             action: 'view.showTerminal',
-            active: terminalOpen,
             icon: Terminal,
             id: 'nav-terminal',
             keywords: ['terminal', 'shell', 'console'],
@@ -351,7 +349,7 @@ export function CommandPalette() {
         ]
       }
     ]
-  }, [go, settingsSectionLabel, t, terminalOpen])
+  }, [go, settingsSectionLabel, t])
 
   // The long, granular lists (settings fields, API keys, MCP servers, archived
   // chats) only surface once the user types — otherwise they'd bury the
