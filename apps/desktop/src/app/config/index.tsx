@@ -4,6 +4,7 @@ import { Codicon } from '../../components/ui/codicon'
 import { Tabs, TabsList, TabsTrigger } from '../../components/ui/tabs'
 
 import { ConfigPanel } from './config-panel'
+import { ChannelsPanel } from './panels/channels'
 import { HooksPanel } from './panels/hooks'
 import { McpPanel } from './panels/mcp'
 import { PairingPanel } from './panels/pairing'
@@ -67,6 +68,8 @@ export function ConfigView() {
           <PluginsPanel />
         ) : tab === 'mcp' ? (
           <McpPanel />
+        ) : tab === 'channels' ? (
+          <ChannelsPanel />
         ) : (
           <StubPanel label={SUB_TABS.find(t => t.id === tab)?.label ?? ''} />
         )}
