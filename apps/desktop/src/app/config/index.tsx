@@ -6,38 +6,30 @@ import { Tabs, TabsList, TabsTrigger } from '../../components/ui/tabs'
 import { ConfigPanel } from './config-panel'
 import { ChannelsPanel } from './panels/channels'
 import { HooksPanel } from './panels/hooks'
+import { KeysPanel } from './panels/keys'
 import { McpPanel } from './panels/mcp'
 import { PairingPanel } from './panels/pairing'
 import { PluginsPanel } from './panels/plugins'
 
 // Config umbrella: one nav surface consolidating Config + Plugins, MCP,
-// Channels, Hooks, Pairing & Keys (per the dashboard merge plan). Config is
-// the first ported panel; the rest land here in follow-up increments.
+// Channels, Hooks, Pairing & Keys (per the dashboard merge plan). All seven
+// panels are now ported.
 
 type SubTab = 'config' | 'plugins' | 'mcp' | 'channels' | 'hooks' | 'pairing' | 'keys'
 
-const SUB_TABS: { id: SubTab; label: string; icon: string }[] = [
-  { id: 'config', label: 'Config', icon: 'settings-gear' },
-  { id: 'plugins', label: 'Plugins', icon: 'extensions' },
-  { id: 'mcp', label: 'MCP', icon: 'plug' },
-  { id: 'channels', label: 'Channels', icon: 'broadcast' },
-  { id: 'hooks', label: 'Hooks', icon: 'link' },
-  { id: 'pairing', label: 'Pairing', icon: 'key' },
-  { id: 'keys', label: 'Keys', icon: 'lock' },
+const SUB_TABS: { id: SubTab; label: string; icon: string; Panel: () => React.JSX.Element }[] = [
+  { id: 'config', label: 'Config', icon: 'settings-gear', Panel: ConfigPanel },
+  { id: 'plugins', label: 'Plugins', icon: 'extensions', Panel: PluginsPanel },
+  { id: 'mcp', label: 'MCP', icon: 'plug', Panel: McpPanel },
+  { id: 'channels', label: 'Channels', icon: 'broadcast', Panel: ChannelsPanel },
+  { id: 'hooks', label: 'Hooks', icon: 'link', Panel: HooksPanel },
+  { id: 'pairing', label: 'Pairing', icon: 'key', Panel: PairingPanel },
+  { id: 'keys', label: 'Keys', icon: 'lock', Panel: KeysPanel },
 ]
-
-function StubPanel({ label }: { label: string }) {
-  return (
-    <div className="flex flex-col items-center justify-center gap-2 py-24 text-(--ui-text-tertiary)">
-      <Codicon className="size-7 opacity-40" name="tools" />
-      <p className="text-sm font-medium">{label} — porting in progress</p>
-      <p className="text-xs">This panel moves into the Config umbrella in an upcoming build.</p>
-    </div>
-  )
-}
 
 export function ConfigView() {
   const [tab, setTab] = useState<SubTab>('config')
+  const ActivePanel = (SUB_TABS.find(t => t.id === tab) ?? SUB_TABS[0]).Panel
 
   return (
     <div className="flex h-full min-w-0 flex-col gap-4 overflow-y-auto p-4 pt-(--titlebar-height)">
@@ -58,21 +50,7 @@ export function ConfigView() {
       </Tabs>
 
       <div className="min-w-0 flex-1">
-        {tab === 'config' ? (
-          <ConfigPanel />
-        ) : tab === 'pairing' ? (
-          <PairingPanel />
-        ) : tab === 'hooks' ? (
-          <HooksPanel />
-        ) : tab === 'plugins' ? (
-          <PluginsPanel />
-        ) : tab === 'mcp' ? (
-          <McpPanel />
-        ) : tab === 'channels' ? (
-          <ChannelsPanel />
-        ) : (
-          <StubPanel label={SUB_TABS.find(t => t.id === tab)?.label ?? ''} />
-        )}
+        <ActivePanel />
       </div>
     </div>
   )
