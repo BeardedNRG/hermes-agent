@@ -141,6 +141,7 @@ const SkillsView = lazy(async () => ({ default: (await import('./skills')).Skill
 const LogsView = lazy(async () => ({ default: (await import('./log-viewer')).LogsView }))
 const AnalyticsView = lazy(async () => ({ default: (await import('./analytics')).AnalyticsView }))
 const ConfigView = lazy(async () => ({ default: (await import('./config')).ConfigView }))
+const SystemView = lazy(async () => ({ default: (await import('./system')).SystemView }))
 
 // Latest cron-job sessions surfaced in the collapsed "Cron jobs" section. The
 // Cron sessions are written by a background scheduler tick (the desktop
@@ -1213,6 +1214,14 @@ export function DesktopController() {
               </Suspense>
             }
             path="config"
+          />
+          <Route
+            element={
+              <Suspense fallback={null}>
+                <SystemView />
+              </Suspense>
+            }
+            path="system"
           />
           <Route element={null} path="cron" />
           <Route element={null} path="profiles" />
