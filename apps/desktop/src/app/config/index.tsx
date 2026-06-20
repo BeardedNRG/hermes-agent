@@ -6,6 +6,7 @@ import { Tabs, TabsList, TabsTrigger } from '../../components/ui/tabs'
 import { ConfigPanel } from './config-panel'
 import { HooksPanel } from './panels/hooks'
 import { PairingPanel } from './panels/pairing'
+import { PluginsPanel } from './panels/plugins'
 
 // Config umbrella: one nav surface consolidating Config + Plugins, MCP,
 // Channels, Hooks, Pairing & Keys (per the dashboard merge plan). Config is
@@ -61,6 +62,8 @@ export function ConfigView() {
           <PairingPanel />
         ) : tab === 'hooks' ? (
           <HooksPanel />
+        ) : tab === 'plugins' ? (
+          <PluginsPanel />
         ) : (
           <StubPanel label={SUB_TABS.find(t => t.id === tab)?.label ?? ''} />
         )}
