@@ -95,7 +95,7 @@ import {
   sessionPinId
 } from '@/store/session'
 
-import { type AppView, ARTIFACTS_ROUTE, MESSAGING_ROUTE, SKILLS_ROUTE } from '../../routes'
+import { type AppView, ANALYTICS_ROUTE, ARTIFACTS_ROUTE, LOGS_ROUTE, MESSAGING_ROUTE, SKILLS_ROUTE } from '../../routes'
 import { SidebarPanelLabel } from '../../shell/sidebar-label'
 import type { SidebarNavItem } from '../../types'
 
@@ -131,7 +131,9 @@ const SIDEBAR_NAV: SidebarNavItem[] = [
     route: SKILLS_ROUTE
   },
   { id: 'messaging', label: '', icon: props => <Codicon name="comment" {...props} />, route: MESSAGING_ROUTE },
-  { id: 'artifacts', label: '', icon: props => <Codicon name="files" {...props} />, route: ARTIFACTS_ROUTE }
+  { id: 'analytics', label: 'Analytics', icon: props => <Codicon name="graph-line" {...props} />, route: ANALYTICS_ROUTE },
+  { id: 'artifacts', label: '', icon: props => <Codicon name="files" {...props} />, route: ARTIFACTS_ROUTE },
+  { id: 'logs', label: '', icon: props => <Codicon name="output" {...props} />, route: LOGS_ROUTE }
 ]
 
 const WORKSPACE_PAGE = 5
@@ -816,7 +818,9 @@ export function ChatSidebar({
                 const active =
                   (item.id === 'skills' && currentView === 'skills') ||
                   (item.id === 'messaging' && currentView === 'messaging') ||
-                  (item.id === 'artifacts' && currentView === 'artifacts')
+                  (item.id === 'analytics' && currentView === 'analytics') ||
+                  (item.id === 'artifacts' && currentView === 'artifacts') ||
+                  (item.id === 'logs' && currentView === 'logs')
 
                 const isNewSession = item.id === 'new-session'
 
