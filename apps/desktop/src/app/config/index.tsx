@@ -4,6 +4,8 @@ import { Codicon } from '../../components/ui/codicon'
 import { Tabs, TabsList, TabsTrigger } from '../../components/ui/tabs'
 
 import { ConfigPanel } from './config-panel'
+import { HooksPanel } from './panels/hooks'
+import { PairingPanel } from './panels/pairing'
 
 // Config umbrella: one nav surface consolidating Config + Plugins, MCP,
 // Channels, Hooks, Pairing & Keys (per the dashboard merge plan). Config is
@@ -53,7 +55,15 @@ export function ConfigView() {
       </Tabs>
 
       <div className="min-w-0 flex-1">
-        {tab === 'config' ? <ConfigPanel /> : <StubPanel label={SUB_TABS.find(t => t.id === tab)?.label ?? ''} />}
+        {tab === 'config' ? (
+          <ConfigPanel />
+        ) : tab === 'pairing' ? (
+          <PairingPanel />
+        ) : tab === 'hooks' ? (
+          <HooksPanel />
+        ) : (
+          <StubPanel label={SUB_TABS.find(t => t.id === tab)?.label ?? ''} />
+        )}
       </div>
     </div>
   )
