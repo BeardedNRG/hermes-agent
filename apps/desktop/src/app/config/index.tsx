@@ -5,6 +5,7 @@ import { Tabs, TabsList, TabsTrigger } from '../../components/ui/tabs'
 
 import { ConfigPanel } from './config-panel'
 import { HooksPanel } from './panels/hooks'
+import { McpPanel } from './panels/mcp'
 import { PairingPanel } from './panels/pairing'
 import { PluginsPanel } from './panels/plugins'
 
@@ -64,6 +65,8 @@ export function ConfigView() {
           <HooksPanel />
         ) : tab === 'plugins' ? (
           <PluginsPanel />
+        ) : tab === 'mcp' ? (
+          <McpPanel />
         ) : (
           <StubPanel label={SUB_TABS.find(t => t.id === tab)?.label ?? ''} />
         )}
