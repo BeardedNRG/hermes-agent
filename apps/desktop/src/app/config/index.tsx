@@ -5,6 +5,7 @@ import { Tabs, TabsList, TabsTrigger } from '../../components/ui/tabs'
 
 import { ConfigPanel } from './config-panel'
 import { ChannelsPanel } from './panels/channels'
+import { EnvPanel } from './panels/env'
 import { HooksPanel } from './panels/hooks'
 import { KeysPanel } from './panels/keys'
 import { McpPanel } from './panels/mcp'
@@ -12,10 +13,9 @@ import { PairingPanel } from './panels/pairing'
 import { PluginsPanel } from './panels/plugins'
 
 // Config umbrella: one nav surface consolidating Config + Plugins, MCP,
-// Channels, Hooks, Pairing & Keys (per the dashboard merge plan). All seven
-// panels are now ported.
+// Channels, Hooks, Pairing, Keys & Env (per the dashboard merge plan).
 
-type SubTab = 'config' | 'plugins' | 'mcp' | 'channels' | 'hooks' | 'pairing' | 'keys'
+type SubTab = 'config' | 'plugins' | 'mcp' | 'channels' | 'hooks' | 'pairing' | 'keys' | 'env'
 
 const SUB_TABS: { id: SubTab; label: string; icon: string; Panel: () => React.JSX.Element }[] = [
   { id: 'config', label: 'Config', icon: 'settings-gear', Panel: ConfigPanel },
@@ -25,6 +25,7 @@ const SUB_TABS: { id: SubTab; label: string; icon: string; Panel: () => React.JS
   { id: 'hooks', label: 'Hooks', icon: 'link', Panel: HooksPanel },
   { id: 'pairing', label: 'Pairing', icon: 'key', Panel: PairingPanel },
   { id: 'keys', label: 'Keys', icon: 'lock', Panel: KeysPanel },
+  { id: 'env', label: 'Env', icon: 'symbol-key', Panel: EnvPanel },
 ]
 
 export function ConfigView() {
