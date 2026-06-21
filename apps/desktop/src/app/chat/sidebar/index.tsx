@@ -95,7 +95,7 @@ import {
   sessionPinId
 } from '@/store/session'
 
-import { type AppView, ANALYTICS_ROUTE, ARTIFACTS_ROUTE, CONFIG_ROUTE, CRON_JOBS_ROUTE, LOGS_ROUTE, MESSAGING_ROUTE, MODELS_ROUTE, SKILLS_ROUTE, SYSTEM_ROUTE } from '../../routes'
+import { type AppView, AGENT_PROFILES_ROUTE, ANALYTICS_ROUTE, ARTIFACTS_ROUTE, CONFIG_ROUTE, CRON_JOBS_ROUTE, LOGS_ROUTE, MESSAGING_ROUTE, MODELS_ROUTE, SKILLS_ROUTE, SYSTEM_ROUTE } from '../../routes'
 import { SidebarPanelLabel } from '../../shell/sidebar-label'
 import type { SidebarNavItem } from '../../types'
 
@@ -137,7 +137,8 @@ const SIDEBAR_NAV: SidebarNavItem[] = [
   { id: 'config', label: 'Config', icon: props => <Codicon name="settings-gear" {...props} />, route: CONFIG_ROUTE },
   { id: 'system', label: 'System', icon: props => <Codicon name="server-environment" {...props} />, route: SYSTEM_ROUTE },
   { id: 'models', label: 'Models', icon: props => <Codicon name="chip" {...props} />, route: MODELS_ROUTE },
-  { id: 'cron-jobs', label: 'Cron', icon: props => <Codicon name="watch" {...props} />, route: CRON_JOBS_ROUTE }
+  { id: 'cron-jobs', label: 'Cron', icon: props => <Codicon name="watch" {...props} />, route: CRON_JOBS_ROUTE },
+  { id: 'agent-profiles', label: 'Agents', icon: props => <Codicon name="organization" {...props} />, route: AGENT_PROFILES_ROUTE }
 ]
 
 const WORKSPACE_PAGE = 5
@@ -828,7 +829,8 @@ export function ChatSidebar({
                   (item.id === 'config' && currentView === 'config') ||
                   (item.id === 'system' && currentView === 'system') ||
                   (item.id === 'models' && currentView === 'models') ||
-                  (item.id === 'cron-jobs' && currentView === 'cron-jobs')
+                  (item.id === 'cron-jobs' && currentView === 'cron-jobs') ||
+                  (item.id === 'agent-profiles' && currentView === 'agent-profiles')
 
                 const isNewSession = item.id === 'new-session'
 
